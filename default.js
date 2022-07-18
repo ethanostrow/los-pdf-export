@@ -12,24 +12,32 @@ pdf(dataBuffer).then(function(data) {
     console.log(fullText);
 
     //create search terms array and parameters
-    const searchTerms = ["Mr.", "Miss", "Sir", "ACTING PRESIDENT", "PRESIDENT, SECRETARY-GENERAL"];
+    const searchTerms = ["Mr.", "Miss", "Sir", "ACTING PRESIDENT", "PRESIDENT", "SECRETARY-GENERAL"];
     
 
     //initialize search variables and output; set search start location
     let speakers = [];
     let startDocChr = fullText.indexOf("1. ");
-    let endDocChr = fullText.indexOf("The meeting rose");
     let startChr = 0;
     let endChr = 0;
 
+    //console.log(fullText.includes("SECRETARY-GENERAL"));
+
     //search for the key terms
     for (const term of searchTerms){
+        speakers.push(term + "-----------------------");
         while (fullText.indexOf(term) !== -1){
             startChr = fullText.indexOf(term, startDocChr);
 
             //pick the appropriate string length for the type of title in question
-            if (fullText.substring(startChr, startChr + 1) != "M" && fullText.substring(startChr, startChr + 1) != "S"){
-                endChr = fullText.indexOf("NT", startChr) + 2;
+            if(term == "ACTING PRESIDENT"){
+                endChr = startChr + 16;
+            }
+            else if(term == "PRESIDENT"){
+                endChr  = startChr + 9;
+            }
+            else if(term == "SECRETARY-GENERAL"){
+                endChr = startChr + 17;
             }
             else {
                 endChr = fullText.indexOf(")", startChr) + 1;
@@ -42,8 +50,9 @@ pdf(dataBuffer).then(function(data) {
 
             //push the substring to the storage array and remove it from the document
             speakers.push(fullText.substring(startChr, endChr));
-            fullText = fullText.substring(0, startChr - 1) + fullText.substring(endChr + 1, fullText.length);
+            fullText = fullText.substring(startDocChr, startChr - 1) + fullText.substring(endChr + 1);
         }
     }
     console.log(speakers);
+    //console.log(fullText);
 });
