@@ -9,6 +9,7 @@ pdf(dataBuffer).then(function(data) {
     let fullText = data.text;
     fullText = fullText.replace(/\n/g, " ");
     fullText = fullText.replace(/\s+/g, ' ').trim();
+    fullText = fullText.replace(/- /g,"");
     console.log(fullText);
 
     //create search terms array and parameters
