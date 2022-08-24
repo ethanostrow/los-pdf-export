@@ -23,8 +23,13 @@ pdf(dataBuffer).then(function(data) {
     let startChr = startDocChr;
     let endChr = 0;
     let currentSpeech = "";
-    //console.log(number + ". ");
+    
+    //create prefix terms array
+    const prefixes = ["Mr.", "Miss", "Sir", "Rev."];
 
+    //IDENTIFY SPEECHES------------------------------------------------------------------
+    
+    //helper function to check if there are more speeches left if we missed one
     var speechesLeft = function(){
         if (fullText.indexOf(number + ". ") !== -1){
             return true;
@@ -58,6 +63,8 @@ pdf(dataBuffer).then(function(data) {
     currentSpeech = fullText.substring(startChr, endChr-1);
     speeches.push(currentSpeech);
     
+    //HELPER FUNCTIONS
+    
     //uppercase checker helper function
     //returns true if string [letter] is uppercase, false if not
     var isUppercase = function(inputString){
@@ -75,6 +82,27 @@ pdf(dataBuffer).then(function(data) {
                 return false;
           }
     }
+    //returns word bounds for a string and a position input. Used below before cleaning whitespace.
+    function getWordBoundsAtPosition(str, position) {
+        const isSpace = (c) => /\s/.exec(c);
+        let start = position - 1;
+        let end = position;
+      
+        while (start >= 0 && !isSpace(str[start])) {
+          start -= 1;
+        }
+        start = Math.max(0, start + 1);
+      
+        while (end < str.length && !isSpace(str[end])) {
+          end += 1;
+        }
+        end = Math.max(start, end);
+        
+        return [start, end];
+      }
+
+
+    //PULLING TITLES------------------------------------------------------------------
 
     //try best to clean the data into just the titles
     for (const j of speeches){
@@ -82,13 +110,19 @@ pdf(dataBuffer).then(function(data) {
         let endInChr = 0;
         let holding = "";
         //console.log(j); //debugging
+
+        //check each character in each speech
         for (let k = 0; k < j.length; k++){
             holding = "";
             var checker = j.charAt(k); //debugging
             var checkcheck = j.charAt(k+1); //debugging
+            
+            //catch up to last checked character
             if (k <= endInChr){
                 continue;
             }
+
+            //check for two capitals in a row to start logging
             else if (isUppercase(j.charAt(k)) && isUppercase(j.charAt(k+1))){
                 //console.log(checker); //debugging
                 //console.log(checkcheck); //debugging
@@ -108,23 +142,51 @@ pdf(dataBuffer).then(function(data) {
                 }
                 checkCapsNextWord();
 
-                //getting rid of the trailing space (super lazy)
-                if (holding.charAt(holding.length - 1) === ' '){
-                    holding = holding.substring(0, holding.length-1);
-                }
-
-                if(holding.includes("CONF.") || holding.includes("XX")){
+                //stop logging if the string in question is a UN transcript element instead of a diplomat speech
+                if (holding.includes("CONF.") || holding.includes("XX")){
                     continue;
                 }
 
-                cleanSpeeches.push(holding);
+                //find the country in parenthesis if one is available
+                //first check for an open parenthesis
+                if (j.charAt(endInChr + 1) === '('){
+                    let nextClose = j.indexOf(")", endInChr +1 );
+                    
+                    //if no ), add 15
+                    if (nextClose === -1){
+                        holding += j.substring(endInChr, endInChr + 40);
+                    }
+
+                    //if the ) comes more than 15 characters later, cut it off
+                    else if ((nextClose - endInChr) > 40){
+                        holding += j.substring(endInChr, endInChr + 40);
+                        //errors.push() //later: figure out a way to add the speech number if there's an error.
+                    }
+                    //otherwise, add up to the )
+                    else {
+                        holding += j.substring(endInChr, nextClose + 1);
+                    }
+                }                
+
+                //find a prefix if one exists
+                const [start, end] = getWordBoundsAtPosition(j, k-2);
+                let wordBefore = j.substring(start, end);
+                if(prefixes.includes(wordBefore)){
+                    holding = wordBefore + ' ' + holding;
+                }
+
+                //log the string
+                cleanSpeeches.push(holding.replace(/\s+/g, ' ').trim());
             }
         }
     }
 
+    //CLEAN SPEAKERS LIST------------------------------------------------------------------
 
-    //log all speeches
-    console.log("-----------------------SPEECHES------------------------");
+
+    //log all speakers
+    //console.log(speeches); //debugging
+    console.log("-----------------------SPEAKERS------------------------");
     console.log(cleanSpeeches);
     console.log("-----------------------ERRORS------------------------");
     console.log(errors);
