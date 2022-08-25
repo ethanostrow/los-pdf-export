@@ -2,7 +2,7 @@
 const fs = require('fs');
 const pdf = require('pdf-parse');
 
-let dataBuffer = fs.readFileSync('docs/session-1/a_conf62_sr1.pdf');
+let dataBuffer = fs.readFileSync('docs/session-1/a_conf62_sr2.pdf');
 
 pdf(dataBuffer).then(function(data) {
     
@@ -15,8 +15,9 @@ pdf(dataBuffer).then(function(data) {
     //fullText = fullTextf.replace(/- /g,"");
 
     //initialize search variables and output; set search start location
-    let speeches = [];
-    let cleanSpeeches = [];
+    var speeches = [];
+    var speakers = [];
+    var speakerCount = [];
     let errors = [];
     let startDocChr = fullText.indexOf("1. ");
     let number = 2;
@@ -152,7 +153,7 @@ pdf(dataBuffer).then(function(data) {
                 if (j.charAt(endInChr + 1) === '('){
                     let nextClose = j.indexOf(")", endInChr +1 );
                     
-                    //if no ), add 15
+                    //if no ), add 40
                     if (nextClose === -1){
                         holding += j.substring(endInChr, endInChr + 40);
                     }
@@ -176,31 +177,43 @@ pdf(dataBuffer).then(function(data) {
                 }
 
                 //log the string
-                cleanSpeeches.push(holding.replace(/\s+/g, ' ').trim());
+                speakers.push(holding.replace(/\s+/g, ' ').trim());
             }
         }
     }
 
     //CLEAN SPEAKERS LIST------------------------------------------------------------------
+    //check if any of the speakers are case insensitive subsets of one another
+    //for (const m)
+    for (const m of speakers){
+        for (let n = 0; n < speakers.length; n++){
+            if (m.toLowerCase().includes(speakers[n].toLowerCase())){
+                speakers[n] = m;
+            }
+        }
+    }
 
+    //COUNT HOW MANY TIMES EACH SPEAKER SPOKE
+    //double for loop, iterate over each element, if we see the same one, add it to the counter and delete the element. at end, append counter to string
+    for (let n = 0; n < speakers.length; n++){
+        var timesSpoke = 0;
+        for (let o = 0; o < speakers.length; o++){
+            if (speakers[n] === speakers[o]){
+                timesSpoke++;
+            }
+        }
+        speakerCount.push(speakers[n] + ": " + timesSpoke);
+    }
+    //remove duplicate counts
+    speakerCount = [...new Set(speakerCount)];
+    speakerCount = Array.from(speakerCount);
 
     //log all speakers
     //console.log(speeches); //debugging
     console.log("-----------------------SPEAKERS------------------------");
-    console.log(cleanSpeeches);
+    console.log(speakers);
+    console.log("-----------------------COUNTS------------------------");
+    console.log(speakerCount);
     console.log("-----------------------ERRORS------------------------");
     console.log(errors);
-    
-    
-    //utility to check if we have all the appropriate numbers.
-    // INSTRUCTIONS: to use, comment out the whole while loop.
-    /*for (var i = 1; i < 33; i++){
-        if(fullText.indexOf(i + ". ") !== 1){
-            speeches.push(i);
-        }
-        else{
-            speeches.push(-1);
-        }
-    }
-    console.log(speeches);*/
 });
