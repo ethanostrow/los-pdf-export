@@ -27,7 +27,6 @@ for (let i = 13; i <= 51; i++){
 
 
 //session 3
-
 var s3 = [];
 for (let i = 52; i <= 56; i++){
     s3.push("https://legal.un.org/diplomaticconferences/1973_los/docs/english/vol_4/a_conf62_sr" + i +".pdf");
@@ -40,7 +39,6 @@ for (let i = 52; i <= 56; i++){
   })();
 
 //session 4
-
 var s4 = [];
 for (let i = 57; i <= 70; i++){
     s4.push("https://legal.un.org/diplomaticconferences/1973_los/docs/english/vol_5/a_conf62_sr" + i +".pdf");
