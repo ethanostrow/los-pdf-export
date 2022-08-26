@@ -3,7 +3,7 @@ const fs = require('fs');
 const pdf = require('pdf-parse');
 const Excel = require('exceljs');
 
-let dataBuffer = fs.readFileSync('docs/session-1/a_conf62_sr2.pdf');
+let dataBuffer = fs.readFileSync('docs/session-11/a_conf62_sr182.pdf');
 
 pdf(dataBuffer).then(function(data) {
     
@@ -28,7 +28,8 @@ pdf(dataBuffer).then(function(data) {
     let currentSpeech = "";
     
     //create prefix terms array
-    const prefixes = ["Mr.", "Miss", "Sir", "Rev."];
+    const prefixes = ["Mr.", "Miss", "Mrs.", "Ms.", "Prince", "Sir", "Rev."];
+    const allTitles = ["Mr.", "Miss", "Mrs.", "Ms.", "Prince", "Sir", "Rev.", "ACTING PRESIDENT", "PRESIDENT", "SECRETARY-GENERAL"];
 
     //IDENTIFY SPEECHES------------------------------------------------------------------
     
@@ -103,8 +104,13 @@ pdf(dataBuffer).then(function(data) {
         
         return [start, end];
       }
+      //returns true or false depending on if input string has a number in it
+      function hasNumber(myString) {
+        return /\d/.test(myString);
+      }
 
-
+    
+    
     //PULLING TITLES------------------------------------------------------------------
 
     //try best to clean the data into just the titles
@@ -155,14 +161,14 @@ pdf(dataBuffer).then(function(data) {
                 if (j.charAt(endInChr + 1) === '('){
                     let nextClose = j.indexOf(")", endInChr +1 );
                     
-                    //if no ), add 40
+                    //if no ), add 90
                     if (nextClose === -1){
-                        holding += j.substring(endInChr, endInChr + 40);
+                        holding += j.substring(endInChr, endInChr + 90);
                     }
 
-                    //if the ) comes more than 15 characters later, cut it off
-                    else if ((nextClose - endInChr) > 40){
-                        holding += j.substring(endInChr, endInChr + 40);
+                    //if the ) comes more than 90 characters later, cut it off
+                    else if ((nextClose - endInChr) > 90){
+                        holding += j.substring(endInChr, endInChr + 90);
                         //errors.push() //later: figure out a way to add the speech number if there's an error.
                     }
                     //otherwise, add up to the )
@@ -262,8 +268,57 @@ pdf(dataBuffer).then(function(data) {
         column.width = maxLength < 10 ? 10 : maxLength;
     });
 
+    //fill red cells where 1) numbers/./() in wrong places; 2) name doesn't include the prefix string
     ws.getColumn('name').eachCell(function(cell, rowNumber) {
-        
+        if (hasNumber(cell.value) || (cell.value.includes("(") || cell.value.includes(")"))){
+            cell.fill = {
+                type: 'pattern',
+                pattern:'solid',
+                fgColor:{argb:'FF0000'}
+            };
+        }
+    });
+    ws.getColumn('name').eachCell(function(cell, rowNumber) {
+        if (cell.value.includes('.')){
+            var lastPeriod = cell.value.lastIndexOf('.');
+            if ((cell.value.charAt(lastPeriod - 1) != "r") && (cell.value.charAt(lastPeriod - 1) != "s")){
+                cell.fill = {
+                    type: 'pattern',
+                    pattern:'solid',
+                    fgColor:{argb:'FF0000'}
+                };
+            }
+        }
+    });
+    ws.getColumn('name').eachCell(function(cell, rowNumber) {
+        if (!(allTitles.some(v => cell.value.includes(v)))){
+            cell.fill = {
+                type: 'pattern',
+                pattern:'solid',
+                fgColor:{argb:'FF0000'}
+            };
+        }
+    });
+    ws.getColumn('country').eachCell(function(cell, rowNumber) {
+        if (hasNumber(cell.value) || (cell.value.includes("(") || cell.value.includes(")"))){
+            cell.fill = {
+                type: 'pattern',
+                pattern:'solid',
+                fgColor:{argb:'FF0000'}
+            };
+        }
+    });
+    ws.getColumn('country').eachCell(function(cell, rowNumber) {
+        if (cell.value.includes('.')){
+            var lastPeriod = cell.value.lastIndexOf('.');
+            if ((cell.value.charAt(lastPeriod - 1) != "r") && (cell.value.charAt(lastPeriod - 1) != "s")){
+                cell.fill = {
+                    type: 'pattern',
+                    pattern:'solid',
+                    fgColor:{argb:'FF0000'}
+                };
+            }
+        }
     });
 
     wb.xlsx
@@ -278,8 +333,6 @@ pdf(dataBuffer).then(function(data) {
     //log all speakers
     console.log("-----------------------COUNTS------------------------");
     console.log(speakerCount);
-    console.log("-----------------------OBJ------------------------");
-    console.log(splitCount);
     console.log("-----------------------ERRORS------------------------");
     console.log(errors);
 });
